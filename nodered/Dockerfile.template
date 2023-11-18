@@ -1,0 +1,23 @@
+###
+# Build step
+###
+FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-node:18.14.1-build as build
+
+RUN JOBS=MAX npm install -g --production --unsafe-perm \
+       node-red@3.1.0 \
+       node-red-contrib-balena@1.0.1 \
+       node-red-contrib-influxdb@0.6.1 \
+       node-red-contrib-nordpool-api-plus@4.4.0
+
+###
+# Runtime image
+###
+FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-node:18.14.1-run
+
+# Copy over the files created in the build step, including lib/, bin/
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+COPY ./app/ /usr/src/app/
+
+CMD ["node-red", "--settings", "/usr/src/app/settings.js"]

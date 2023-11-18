@@ -1,0 +1,104 @@
+version: '2'
+
+volumes:
+  node-red-data:
+  grafana-data:
+  influxdb-data:
+#  influxdb-etc:
+#  mosquitto-etc:
+
+networks:
+  stenergy-network:
+    driver: bridge
+
+services:
+  # ------------------------------------------------------------------------------------
+  # BalenaLabs WiFi-Connect NOTE: Wifi-module in NUC gen 13 currently lacks Linux drivers
+  # ------------------------------------------------------------------------------------
+#  wifi-connect:
+#    image: bh.cr/balenalabs/wifi-connect-amd64
+#    container_name: wifi-connect
+#    network_mode: host
+#    privileged: true
+#    labels:
+#        io.balena.features.dbus: '1'
+#        io.balena.features.firmware: '1'
+#    restart: always
+
+  # ------------------------------------------------------------------------------------
+  # Eclipse Mosquitto MQTT Broker
+  # ------------------------------------------------------------------------------------
+  mosquitto:
+    build: ./mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    networks:
+      - stenergy-network
+    ports:
+      - "1883:1883"
+#    volumes:
+#      - mosquitto-etc:/mosquitto/config:rw
+
+
+  # ------------------------------------------------------------------------------------
+  # InfluxDB Time-series Database
+  # ------------------------------------------------------------------------------------
+  influxdb:
+    image: influxdb:2.7.1
+    container_name: influxdb
+    restart: unless-stopped
+    networks:
+      - stenergy-network
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+#      - influxdb-etc:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=stenuser
+      - DOCKER_INFLUXDB_INIT_PASSWORD=stenpass
+      - DOCKER_INFLUXDB_INIT_ORG=stenorg 
+      - DOCKER_INFLUXDB_INIT_BUCKET=stenbucket
+      - DOCKER_INFLUXDB_INIT_RETENTION=1000d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=stentoken
+
+  # ------------------------------------------------------------------------------------
+  # Node-RED data processing and automation
+  # ------------------------------------------------------------------------------------
+  nodered:
+    build: ./nodered
+    restart: unless-stopped
+    privileged: true
+    cap_add:
+      - SYS_RAWIO
+    networks:
+      - stenergy-network
+    ports:
+      - "1880:1880"
+    labels:
+      io.balena.features.supervisor-api: '1'
+    volumes:
+      - node-red-data:/data
+    devices:
+      - "/dev/mem:/dev/mem"
+      - "/dev/gpiomem:/dev/gpiomem"
+      - "/dev/i2c-1:/dev/i2c-1"
+
+  # ------------------------------------------------------------------------------------
+  # Grafana Data Visualization
+  # ------------------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.1.4
+    container_name: grafana
+    restart: unless-stopped
+    networks:
+      - stenergy-network
+    ports:
+     - "80:3000"
+    volumes:
+     - grafana-data:/var/lib/grafana
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+      - GF_SECURITY_ADMIN_USER=stenuser
+      - GF_SECURITY_ADMIN_PASSWORD=stenpass
