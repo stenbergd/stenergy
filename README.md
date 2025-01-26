@@ -1,9 +1,12 @@
 # STENergy
-Home energy analytics and optimization project
+Home energy analytics and optimization project based on Balena device ecosystem with associated services deployed as Docker containers.
 
 ## Hardware
 Intel NUC - Mini PC used as automation and control server for STENergy software runtime and data storage
+
 Husdata H60 - Heat pump communication gateway
+
+Currently One - Electricity meter reading device (HAN port)
 
 ### Intel NUC Bios Setup
 Tested for Intel NUC 13 i5 Pro Kit - Slim (NUC13ANKi50002)
@@ -18,8 +21,8 @@ Press F10 to save and exit BIOS settings.
 
 ## Software Stack
 MING-based stack for connectivity, data storage, automation logic and visualization
-MQTT broker: mosquitto
-Telemetry data storage: InfluxDB
-Automation logic: Node-RED
-Visualization: Grafana
-Optimization: TBD
+* MQTT broker: mosquitto
+* Telemetry data storage: InfluxDB
+* Automation logic: Node-RED
+* Visualization: Grafana
+* Optimization: TBD
